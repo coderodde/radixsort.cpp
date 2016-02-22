@@ -7,19 +7,13 @@
 
 static constexpr size_t BITS_PER_BYTE = 8;
 static constexpr size_t BUCKET_AMOUNT = 256;
-static constexpr size_t QUICKSORT_THRESHOLD = 128;
+static constexpr size_t QUICKSORT_THRESHOLD = 256;
 
 template<class T>
 static size_t getBucketIndexUnsigned(T element, size_t byteIndex)
 {
     return static_cast<size_t>((element >> (byteIndex * BITS_PER_BYTE)) & 0xff);
 }
-
-/*template<class T>
-static size_t getBucketIndexUnsigned(T element, size_t byteIndex)
-{
-    return static_cast<size_t>();
-}*/
 
 template<class RandomIt>
 void unsigned_radix_sort(RandomIt firstSource, RandomIt lastSource,
@@ -220,8 +214,8 @@ void sort(RandomIt first, RandomIt last)
     }
     else
     {
-        // The input objects not integers at all; delegate to stable_sort.
-        std::stable_sort(first, last);
+        // The input objects not integers at all; delegate to std::sort.
+        std::sort(first, last);
     }
 }
 
