@@ -2,22 +2,22 @@
 #define RADIXSORT_H
 
 #include <algorithm>
-#include <iostream>
+#include <climits>
 #include <type_traits>
+#include <vector>
 
-static constexpr size_t BITS_PER_BYTE = 8;
 static constexpr size_t BUCKET_AMOUNT = 256;
 static constexpr size_t QUICKSORT_THRESHOLD = 256;
 
 template<class T>
-static size_t getBucketIndexUnsigned(T element, size_t byteIndex)
+size_t getBucketIndexUnsigned(T element, size_t byteIndex)
 {
-    return static_cast<size_t>((element >> (byteIndex * BITS_PER_BYTE)) & 0xff);
+    return static_cast<size_t>((element >> (byteIndex * CHAR_BIT)) & 0xff);
 }
 
-template<class RandomIt>
-void unsigned_radix_sort(RandomIt firstSource, RandomIt lastSource,
-                         RandomIt firstTarget, RandomIt lastTarget,
+template<class RandomIt1, class RandomIt2>
+void unsigned_radix_sort(RandomIt1 firstSource, RandomIt1 lastSource,
+                         RandomIt2 firstTarget, RandomIt2 lastTarget,
                          size_t byteIndex)
 {
     auto rangeLength = std::distance(firstSource, lastSource);
@@ -28,26 +28,23 @@ void unsigned_radix_sort(RandomIt firstSource, RandomIt lastSource,
         
         if ((byteIndex & 1) == 0)
         {
+            // We had to sort [firstSource, lastSource) because it contains
+            // all the elements belonging to that very range. However,
+            // that range does not reside in the argument vector, so we have
+            // to copy it into the argument vector.
             std::copy(firstSource, lastSource, firstTarget);
         }
         
         return;
     }
     
-    typedef typename std::iterator_traits<RandomIt>::value_type value_type;
+    using value_type = typename std::iterator_traits<RandomIt1>::value_type;
     
-    size_t bucketSizeMap[BUCKET_AMOUNT];
-    size_t startIndexMap[BUCKET_AMOUNT];
-    size_t processedMap [BUCKET_AMOUNT];
+    size_t bucketSizeMap[BUCKET_AMOUNT] = {0};
+    size_t startIndexMap[BUCKET_AMOUNT] = {0};
+    size_t processedMap [BUCKET_AMOUNT] = {0};
     
-    for (size_t i = 0; i < BUCKET_AMOUNT; ++i)
-    {
-        bucketSizeMap[i] = 0;
-        startIndexMap[i] = 0;
-        processedMap[i]  = 0;
-    }
-    
-    for (RandomIt it = firstSource; it != lastSource; ++it)
+    for (RandomIt1 it = firstSource; it != lastSource; ++it)
     {
         bucketSizeMap[getBucketIndexUnsigned(*it, byteIndex)]++;
     }
@@ -57,7 +54,7 @@ void unsigned_radix_sort(RandomIt firstSource, RandomIt lastSource,
         startIndexMap[i] = startIndexMap[i - 1] + bucketSizeMap[i - 1];
     }
     
-    for (RandomIt it = firstSource; it != lastSource; ++it)
+    for (RandomIt1 it = firstSource; it != lastSource; ++it)
     {
         value_type element = *it;
         size_t bucket = getBucketIndexUnsigned(element, byteIndex);
@@ -83,9 +80,9 @@ void unsigned_radix_sort(RandomIt firstSource, RandomIt lastSource,
     }
 }
 
-template<class RandomIt>
-void signed_radix_sort(RandomIt firstSource, RandomIt lastSource,
-                       RandomIt firstTarget, RandomIt lastTarget,
+template<class RandomIt1, class RandomIt2>
+void signed_radix_sort(RandomIt1 firstSource, RandomIt1 lastSource,
+                       RandomIt2 firstTarget, RandomIt2 lastTarget,
                        size_t byteIndex)
 {
     auto rangeLength = std::distance(firstSource, lastSource);
@@ -102,20 +99,13 @@ void signed_radix_sort(RandomIt firstSource, RandomIt lastSource,
         return;
     }
     
-    typedef typename std::iterator_traits<RandomIt>::value_type value_type;
+    using value_type = typename std::iterator_traits<RandomIt1>::value_type;
     
-    size_t bucketSizeMap[BUCKET_AMOUNT];
-    size_t startIndexMap[BUCKET_AMOUNT];
-    size_t processedMap [BUCKET_AMOUNT];
+    size_t bucketSizeMap[BUCKET_AMOUNT] = {0};
+    size_t startIndexMap[BUCKET_AMOUNT] = {0};
+    size_t processedMap [BUCKET_AMOUNT] = {0};
     
-    for (size_t i = 0; i < BUCKET_AMOUNT; ++i)
-    {
-        bucketSizeMap[i] = 0;
-        startIndexMap[i] = 0;
-        processedMap[i]  = 0;
-    }
-    
-    for (RandomIt it = firstSource; it != lastSource; ++it)
+    for (RandomIt1 it = firstSource; it != lastSource; ++it)
     {
         bucketSizeMap[getBucketIndexUnsigned(*it, byteIndex)]++;
     }
@@ -135,7 +125,7 @@ void signed_radix_sort(RandomIt firstSource, RandomIt lastSource,
         startIndexMap[i] = startIndexMap[i - 1] + bucketSizeMap[i - 1];
     }
     
-    for (RandomIt it = firstSource; it != lastSource; ++it)
+    for (RandomIt1 it = firstSource; it != lastSource; ++it)
     {
         value_type element = *it;
         size_t bucket = getBucketIndexUnsigned(element, byteIndex);
@@ -165,30 +155,30 @@ template<class RandomIt>
 void unsigned_radix_sort(RandomIt first, RandomIt last)
 {
     auto rangeLength = std::distance(first, last);
-    typedef typename std::iterator_traits<RandomIt>::value_type value_type;
-    value_type* aux = new value_type[rangeLength];
+    using value_type = typename std::iterator_traits<RandomIt>::value_type;
+    
+    std::vector<value_type> aux(rangeLength);
     
     unsigned_radix_sort(first,
                         last,
-                        aux,
-                        aux + rangeLength,
+                        aux.begin(),
+                        aux.end(),
                         sizeof(value_type) - 1);
-    delete[] aux;
 }
 
 template<class RandomIt>
 void signed_radix_sort(RandomIt first, RandomIt last)
 {
     auto rangeLength = std::distance(first, last);
-    typedef typename std::iterator_traits<RandomIt>::value_type value_type;
-    value_type* aux = new value_type[rangeLength];
+    using value_type = typename std::iterator_traits<RandomIt>::value_type;
+    
+    std::vector<value_type> aux(rangeLength);
     
     signed_radix_sort(first,
                       last,
-                      aux,
-                      aux + rangeLength,
+                      aux.begin(),
+                      aux.end(),
                       sizeof(value_type) - 1);
-    delete[] aux;
 }
 
 template<class RandomIt>

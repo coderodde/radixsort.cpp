@@ -1,7 +1,10 @@
+#define NDEBUG
+
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <random>
+#include <vector>
 #include "radixsort.h"
 
 constexpr size_t SIZE = 50 * 1000 * 1000;
